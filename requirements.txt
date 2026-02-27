@@ -1,0 +1,11 @@
+pyrofork
+PyroTgCrypto
+Pillow
+requests
+numpy
+colorama
+dnspython
+aiohttp
+pytz
+motor
+curl_cffi
