@@ -7,6 +7,7 @@ A comprehensive Telegram Bot for generating stunning Anime and Manga posters usi
 ## 📋 Table of Contents
 
 - [Features](#-features)
+- [Screenshots](#-screenshots)
 - [Deployment Guide](#-deployment-guide)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -26,6 +27,17 @@ A comprehensive Telegram Bot for generating stunning Anime and Manga posters usi
 - **Premium Tier System**: Support for user plans (Bronze, Silver, Gold) with custom task limits.
 - **Image Processing**: Advanced image manipulation using Pillow and NumPy for gradients, rounded corners, and color extraction.
 - **Database Support**: MongoDB integration for tracking user plans and usage.
+
+## 📸 Screenshots
+
+<p align="center">
+  <img src="sc/photo_2025-12-13_23-50-58.jpg" width="30%">
+  <img src="sc/photo_2025-12-14_09-16-55.jpg" width="30%">
+  <img src="sc/photo_2025-12-14_09-28-29.jpg" width="30%">
+  <img src="sc/photo_2025-12-14_09-40-43.jpg" width="30%">
+  <img src="sc/photo_2025-12-14_10-19-19.jpg" width="30%">
+  <img src="sc/photo_2025-12-14_10-24-00.jpg" width="30%">
+</p>
 
 ## 🚀 Deployment Guide
 
@@ -87,11 +99,33 @@ docker run -e API_ID=12345 -e API_HASH=your_hash ... poster-bot
 
 ## 📖 Commands
 
+**General:**
+
 - `/start` - Initialize the bot.
-- `/ani <query>` - Generate an AniList Anime Poster.
-- `/mod <query>` - Generate a Modern style poster.
-- `/plans` - View available premium plans.
+- `/help` - See available commands.
 - `/my_plan` - Check your current subscription status.
+- `/plans` - View available premium plans.
+
+**Poster Generation:**
+
+- `/ani <query>` - Generate an AniList Anime Poster.
+- `/anim <query>` - Generate an AniList Manga Poster.
+- `/crun <query>` - Generate a Crunchyroll Anime Poster.
+- `/net <query>` - Generate a Netflix Anime Poster.
+- `/netm <query>` - Generate a Netflix Manga Poster.
+- `/light <query>` - Generate a Light Simple Anime Poster.
+- `/lightm <query>` - Generate a Light Simple Manga Poster.
+- `/dark <query>` - Generate a Dark Simple Anime Poster.
+- `/darkm <query>` - Generate a Dark Simple Manga Poster.
+- `/netcr <query>` - Generate a Netflix x Crunchyroll Poster.
+- `/mod <query>` - Generate a Modern Anime Poster.
+- `/modm <query>` - Generate a Modern Manga Poster.
+
+**Owner Commands:**
+
+- `/broadcast <msg>` - Broadcast Message.
+- `/add_premium <id> <plan>` - Add Premium User.
+- `/remove_premium <id>` - Remove Premium User.
 
 ## 🤝 Credits
 
