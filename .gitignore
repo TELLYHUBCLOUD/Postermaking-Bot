@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Runtime / generated
+samples/
+*.jpg
+*.jpeg
+*.png
+
+# Env / secrets
+.env
+*.env
+
+# OS
+.DS_Store

@@ -2,7 +2,9 @@ import uuid
 import requests # Use standard requests for upload
 import logging
 
-UPLOAD_URL = "https://api-integretion-unblocked.vercel.app/imgbb"
+from config import Config
+
+UPLOAD_URL = Config.IMGBB_UPLOAD_URL
 
 def upload_to_imgbb(image_io):
     """

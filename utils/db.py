@@ -9,6 +9,8 @@ class Database:
         self.db = self._client[database_name]
         self.col = self.db.users
         self.premium = self.db.premium_users
+        self.authorized = self.db.authorized_users
+        self.user_settings = self.db.user_settings
 
     def new_user(self, id):
         return dict(
@@ -83,6 +85,72 @@ class Database:
             await self.premium.delete_many({"user_id": {"$in": expired_users}})
             
         return expired_users
+
+    # ── Group / User Authorization (for /authorize and /unauthorize) ───
+    async def authorize_user(self, target_id, authorized_by):
+        """Grant bot usage to a user or group chat. Returns True if newly added."""
+        result = await self.authorized.update_one(
+            {"id": int(target_id)},
+            {"$set": {"authorized_by": int(authorized_by), "authorized_at": datetime.now()}},
+            upsert=True,
+        )
+        return result.upserted_id is not None
+
+    async def unauthorize_user(self, target_id):
+        """Revoke bot usage from a user or group chat. Returns True if removed."""
+        result = await self.authorized.delete_one({"id": int(target_id)})
+        return result.deleted_count > 0
+
+    async def is_authorized(self, target_id):
+        """Check whether a user/group is currently authorized."""
+        doc = await self.authorized.find_one({"id": int(target_id)})
+        return True if doc else False
+
+    async def get_all_authorized(self):
+        """Return a list of authorized target ids."""
+        ids = []
+        async for doc in self.authorized.find({}, {"id": 1, "_id": 0}):
+            ids.append(doc["id"])
+        return ids
+
+    async def authorized_count(self):
+        return await self.authorized.count_documents({})
+
+    # ── Per-user settings (e.g. custom thumbnail brand) ───────────────────
+    # Settings are stored as one document per user:
+    #   { "_id": ..., "user_id": <id>, "thumbnail_brand": "...", "updated_at": ... }
+
+    async def set_user_setting(self, user_id, key: str, value):
+        """Save a single user setting (upsert). Returns the value stored."""
+        # Keep the setting document slim: only one key/value pair per doc,
+        # keyed by (user_id, key).
+        await self.user_settings.update_one(
+            {"user_id": int(user_id), "key": key},
+            {"$set": {"value": value, "updated_at": datetime.now()}},
+            upsert=True,
+        )
+        return value
+
+    async def get_user_setting(self, user_id, key: str, default=None):
+        """Fetch a single user setting, returning ``default`` if not set."""
+        doc = await self.user_settings.find_one({"user_id": int(user_id), "key": key})
+        if not doc or "value" not in doc:
+            return default
+        return doc["value"]
+
+    async def get_user_settings(self, user_id):
+        """Fetch all settings for a user as a dict {key: value}."""
+        settings = {}
+        cursor = self.user_settings.find({"user_id": int(user_id)})
+        async for doc in cursor:
+            if "value" in doc:
+                settings[doc["key"]] = doc["value"]
+        return settings
+
+    async def reset_user_setting(self, user_id, key: str) -> bool:
+        """Delete a single user setting. Returns True if removed."""
+        result = await self.user_settings.delete_one({"user_id": int(user_id), "key": key})
+        return result.deleted_count > 0
 
     # Usage Tracking
     async def check_and_update_usage(self, user_id, limit):

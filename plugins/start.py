@@ -16,12 +16,12 @@ async def start_handler(client, message):
     )
     
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("📢 Join Update Channel", url="https://t.me/Blaze_Updatez")],
+        [InlineKeyboardButton("📢 Join Update Channel", url=Config.UPDATE_CHANNEL_URL)],
         [InlineKeyboardButton("ℹ️ Help / Commands", callback_data="help_menu")]
     ])
     
     # Using AniList preview as the start image
-    START_IMG = "https://i.pinimg.com/736x/26/8f/68/268f680f5a32c8d37cad7b28455a1123.jpg"
+    START_IMG = Config.START_IMG
     
     await message.reply_photo(
         photo=START_IMG,
@@ -171,7 +171,7 @@ async def help_navigate(client, callback_query):
 @Client.on_callback_query(filters.regex("start_menu"))
 async def back_to_start(client, callback_query):
     # Define Start details
-    START_IMG = "https://i.pinimg.com/736x/26/8f/68/268f680f5a32c8d37cad7b28455a1123.jpg"
+    START_IMG = Config.START_IMG
     
     txt = (
         f"Hi **{callback_query.from_user.first_name}**! 👋\n\n"
@@ -181,7 +181,7 @@ async def back_to_start(client, callback_query):
     )
     
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("📢 Join Update Channel", url="https://t.me/Blaze_Updatez")],
+        [InlineKeyboardButton("📢 Join Update Channel", url=Config.UPDATE_CHANNEL_URL)],
         [InlineKeyboardButton("ℹ️ Help / Commands", callback_data="help_menu")]
     ])
     

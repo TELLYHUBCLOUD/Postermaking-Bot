@@ -7,13 +7,21 @@ from templates.lightsimple import create_poster as lightsimple_poster
 from templates.netflix import create_poster as netflix_poster
 from templates.darksimple import create_poster as darksimple_poster
 from templates.modern import create_poster as modern_poster
+from templates.tmdb_poster import create_poster as tmdb_poster
 
 from anilist import get_anime_data
-from crunchyroll import fetch_series_data, login_anonymously, USER_AGENT
-from curl_cffi import requests
+from api.tmdb_client import get_tmdb_media
+from crunchyroll import fetch_series_data
 from PIL import ImageDraw, ImageFont, Image
 
-def add_watermark(image, text="@Blaze_Updatez"):
+from config import Config
+
+WATERMARK = Config.WATERMARK
+
+
+def add_watermark(image, text=None):
+    if text is None:
+        text = WATERMARK
     try:
         # Create a drawing context
         draw = ImageDraw.Draw(image)
@@ -77,7 +85,9 @@ TEMPLATE_MAP = {
     "webm": darksimple_poster,
     "netcr": netflix_poster,
     "mod": modern_poster,
-    "modm": modern_poster
+    "modm": modern_poster,
+    "tmdb": tmdb_poster,
+    "tmdbm": tmdb_poster
 }
 
 async def generate_poster_image(template_name, query, media_type="ANIME", is_premium=False):
@@ -96,26 +106,20 @@ async def generate_poster_image(template_name, query, media_type="ANIME", is_pre
     # 1. Fetch Data
     data = None
     
-    if template_name in ("netcr", "crun"):
+    if template_name == "tmdb":
+        # TMDB (Movies / TV) Fetching Logic
+        data = get_tmdb_media(query)
+    elif template_name in ("netcr", "crun"):
         try:
-             # Crunchyroll Fetching Logic
-             with requests.Session(impersonate="chrome") as session:
-                session.headers.update({"User-Agent": USER_AGENT})
-                token = login_anonymously(session)
-                data = fetch_series_data(session, token, query)
-                
-                # Check for errors in CR response
-                if isinstance(data, dict) and "error" in data:
-                    logging.error(f"CR Error: {data['error']}")
-                    data = None
-                    
+            # Crunchyroll Fetching Logic (worker-based)
+            data = fetch_series_data(query)
+            # Check for errors in CR response
+            if isinstance(data, dict) and "error" in data:
+                logging.error(f"CR Error: {data['error']}")
+                data = None
         except Exception as e:
             logging.error(f"CR Fetch Exception: {e}", exc_info=True)
             data = None
-            
-        # Fallback to AniList if CR fails? 
-        # For now, let's strictly try CR for netcr as implied by name.
-        # Check if data found.
     else:
         # Standard AniList Fetching
         data = get_anime_data(query, media_type)
@@ -156,7 +160,7 @@ async def generate_poster_image(template_name, query, media_type="ANIME", is_pre
             # Pillow allows adding exif.
             exif = result.getexif()
             # 0x0131 is Software, 0x013B is Artist
-            exif[0x013B] = "Blaze_Updatez" 
+            exif[0x013B] = WATERMARK 
             
             result.save(img_io, 'JPEG', quality=85, exif=exif)
             img_io.seek(0)
@@ -174,7 +178,7 @@ async def generate_poster_image(template_name, query, media_type="ANIME", is_pre
                     img = img.convert("RGB")
                     
                 exif = img.getexif()
-                exif[0x013B] = "Blaze_Updatez"
+                exif[0x013B] = WATERMARK
                 img.save(out_io, 'JPEG', quality=85, exif=exif)
             else:
                  # Just copy/convert if needed but skip watermark
@@ -184,7 +188,7 @@ async def generate_poster_image(template_name, query, media_type="ANIME", is_pre
                     img = img.convert("RGB")
                  
                  exif = img.getexif()
-                 exif[0x013B] = "Blaze_Updatez"
+                 exif[0x013B] = WATERMARK
                  img.save(out_io, 'JPEG', quality=85, exif=exif)
             
             out_io.seek(0)

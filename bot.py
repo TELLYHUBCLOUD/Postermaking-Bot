@@ -78,11 +78,20 @@ async def main():
             BotCommand("netcr", "Netflix x Crunchyroll"),
             BotCommand("mod", "Modern Poster"),
             BotCommand("modm", "Modern Manga Poster"),
+            BotCommand("tmdb", "TMDB Movie / TV Poster"),
+            BotCommand("movie", "TMDB Movie Poster"),
+            BotCommand("tv", "TMDB TV Poster"),
+            BotCommand("magic", "Magic Thumbnail (20 templates)"),
+            BotCommand("premiere", "Premiere Thumbnail (12 styles)"),
+            BotCommand("settings", "Your personal settings (buttons)"),
             BotCommand("my_plan", "Check Premium Status"),
             BotCommand("plans", "View Premium Plans"),
             BotCommand("broadcast", "Broadcast Message (Owner)"),
             BotCommand("add_premium", "Add Premium (Owner)"),
             BotCommand("remove_premium", "Remove Premium (Owner)"),
+            BotCommand("authorize", "Authorize a group/user (Owner)"),
+            BotCommand("unauthorize", "Revoke access (Owner)"),
+            BotCommand("authorized", "List authorized targets (Owner)"),
         ]
         await app.set_bot_commands(commands)
         logger.info("Bot commands registered.")

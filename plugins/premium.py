@@ -127,6 +127,26 @@ async def remove_premium(client, message):
     else:
         await message.reply_text("This user does not have premium status.")
 
+@Client.on_callback_query(filters.regex("plans_menu"))
+async def plans_callback(client, callback_query):
+    plans_text = PLANS_TXT.format(
+        bronze_limit=Config.TASK_LIMITS.get("bronze", "N/A"),
+        silver_limit=Config.TASK_LIMITS.get("silver", "N/A"),
+        gold_limit=Config.TASK_LIMITS.get("gold", "N/A"),
+        default_limit=Config.TASK_LIMITS.get("default", "N/A"),
+    )
+    buttons = InlineKeyboardMarkup([[
+        InlineKeyboardButton('👑 Contact Owner to Upgrade', url=f'tg://user?id={Config.BOT_OWNER}')
+    ]])
+    try:
+        await callback_query.message.edit_text(
+            plans_text, reply_markup=buttons, disable_web_page_preview=True
+        )
+    except Exception:
+        await callback_query.answer()
+    await callback_query.answer()
+
+
 @Client.on_message(filters.command("my_plan"))
 async def my_plan(client, message):
     user_id = message.from_user.id
