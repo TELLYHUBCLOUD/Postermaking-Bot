@@ -82,14 +82,14 @@ async def settings_cmd(client, message):
 async def _send_main_menu(message):
     """Send the main settings menu as a NEW message (from a /settings command)."""
     user_id = message.from_user.id
-    text, markup = _main_menu_content(user_id)
+    text, markup = await _main_menu_content(user_id)
     await message.reply_text(text, reply_markup=markup, quote=True)
 
 
 async def _edit_main_menu(message):
     """Edit an EXISTING message to show the main settings menu (from a callback)."""
     user_id = message.from_user.id
-    text, markup = _main_menu_content(user_id)
+    text, markup = await _main_menu_content(user_id)
     try:
         await message.edit_text(text, reply_markup=markup)
     except Exception:
