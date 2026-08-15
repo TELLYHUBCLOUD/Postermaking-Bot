@@ -1,137 +1,162 @@
 # Postermaking Bot 🎨
 
-A comprehensive Telegram Bot for generating stunning Anime and Manga posters using high-quality templates and data from **AniList** and **Crunchyroll**.
-
----
-
-## 📋 Table of Contents
-
-- [Features](#-features)
-- [Screenshots](#-screenshots)
-- [Deployment Guide](#-deployment-guide)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [Configuration](#-configuration)
-- [Running the Bot](#-running-the-bot)
-- [Customization](#-customization)
-- [Commands](#-commands)
-- [Credits](#-credits)
+A comprehensive **Telegram bot** for generating stunning Anime/Manga posters **and**
+Hollywood-style movie/TV thumbnails — powered by **AniList**, **Crunchyroll** and
+**TMDB**.
 
 ---
 
 ## ✨ Features
 
-- **Edge Worker Integration**: Offloads complex data fetching and scraping to high-performance Cloudflare Workers.
-- **Advanced AniList Support**: Support for anime/manga search and deep metadata via the AniList Edge Worker.
-- **Crunchyroll Integration**: Automated auth and fuzzy search via the Crunchyroll Edge Worker.
-- **Premium Tier System**: Support for user plans (Bronze, Silver, Gold) with custom task limits.
-- **Image Processing**: Advanced image manipulation using Pillow and NumPy for gradients, rounded corners, and color extraction.
-- **Database Support**: MongoDB integration for tracking user plans and usage.
-
-## 📸 Screenshots
-
-<p align="center">
-  <img src="sc/photo_2025-12-13_23-50-58.jpg" width="30%">
-  <img src="sc/photo_2025-12-14_09-16-55.jpg" width="30%">
-  <img src="sc/photo_2025-12-14_09-28-29.jpg" width="30%">
-  <img src="sc/photo_2025-12-14_09-40-43.jpg" width="30%">
-  <img src="sc/photo_2025-12-14_10-19-19.jpg" width="30%">
-  <img src="sc/photo_2025-12-14_10-24-00.jpg" width="30%">
-</p>
-
-## 🚀 Deployment Guide
-
-### Prerequisites
-
-- Python 3.9 or higher.
-- A Telegram Bot token from [@BotFather](https://t.me/BotFather).
-- `API_ID` and `API_HASH` from [my.telegram.org](https://my.telegram.org).
-- A MongoDB database.
-
-### Installation
-
-1. **Clone the repository**:
-
-   ```bash
-   git clone https://github.com/Blaze-UpdateZ/postermaking.git
-   cd postermaking
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-### Configuration
-
-Configure the bot using environment variables. You can create a `.env` file or export them directly:
-
-| Variable                 | Description                         |
-| ------------------------ | ----------------------------------- |
-| `API_ID`                 | Your Telegram API ID                |
-| `API_HASH`               | Your Telegram API Hash              |
-| `BOT_TOKEN`              | Your Telegram Bot Token             |
-| `MONGO_URL`              | MongoDB Connection URL              |
-| `OWNER_ID`               | Your Telegram User ID (Owner)       |
-| `ANILIST_WORKER_URL`     | URL of your AniList Edge Worker     |
-| `CRUNCHYROLL_WORKER_URL` | URL of your Crunchyroll Edge Worker |
-
-### Running the Bot
-
-#### Using Python
-
-```bash
-python bot.py
-```
-
-#### Using Docker
-
-```bash
-docker build -t poster-bot .
-docker run -e API_ID=12345 -e API_HASH=your_hash ... poster-bot
-```
-
-## 🛠️ Customization
-
-- **Templates**: New templates can be added in the `templates/` directory.
-- **Fonts**: Place custom `.ttf` or `.otf` fonts in the `fonts/` directory.
-- **Icons**: Icons for the UI are located in `iconspng/`.
-
-## 📖 Commands
-
-**General:**
-
-- `/start` - Initialize the bot.
-- `/help` - See available commands.
-- `/my_plan` - Check your current subscription status.
-- `/plans` - View available premium plans.
-
-**Poster Generation:**
-
-- `/ani <query>` - Generate an AniList Anime Poster.
-- `/anim <query>` - Generate an AniList Manga Poster.
-- `/crun <query>` - Generate a Crunchyroll Anime Poster.
-- `/net <query>` - Generate a Netflix Anime Poster.
-- `/netm <query>` - Generate a Netflix Manga Poster.
-- `/light <query>` - Generate a Light Simple Anime Poster.
-- `/lightm <query>` - Generate a Light Simple Manga Poster.
-- `/dark <query>` - Generate a Dark Simple Anime Poster.
-- `/darkm <query>` - Generate a Dark Simple Manga Poster.
-- `/netcr <query>` - Generate a Netflix x Crunchyroll Poster.
-- `/mod <query>` - Generate a Modern Anime Poster.
-- `/modm <query>` - Generate a Modern Manga Poster.
-
-**Owner Commands:**
-
-- `/broadcast <msg>` - Broadcast Message.
-- `/add_premium <id> <plan>` - Add Premium User.
-- `/remove_premium <id>` - Remove Premium User.
-
-## 🤝 Credits
-
-- **Powered by**: [@Blaze_Updatez](https://t.me/Blaze_Updatez)
-- **Created by**: [@Bharath_boy](https://t.me/Bharath_boy)
+- **TMDB Integration** — movie / TV search with a "pick the correct title" flow,
+  a TMDB poster template, and a Flask micro-service.
+- **Magic Thumbnails** — 20 professional templates (Netflix, Disney, HBO, Prime,
+  Apple, Cyberpunk, Bollywood, Anime, Horror, K-Drama, Adult ×3, …).
+- **Premiere Thumbnails** — 12 cinematic styles (Classic, Netflix, Gold, Neon,
+  Minimal, Anime, Horror, K-Drama, Adult ×3, Vintage).
+- **AniList / Crunchyroll posters** — the original anime & manga poster templates.
+- **Premium tier system** — Bronze / Silver / Gold plans with per-tier daily limits.
+- **Per-user settings** — fully callback-driven `/settings` menu (custom brand,
+  channel badge, quality tags, default template/style) saved to MongoDB.
+- **Group authorization** — owner can `/authorize` / `/unauthorize` chats.
+- **Health-check server** — binds `$PORT` so Render/PaaS detect a live service.
+- **Modular architecture** — clean separation of `core`, `services`, `plugins`.
 
 ---
 
-_Disclaimer: This project is for personal use and educational purposes. Ensure compliance with the Terms of Service of all data providers used._
+## 🧱 Project Structure
+
+```
+Postermaking-Bot/
+├── bot.py                  # entry point (loads config, starts client+health+plugins)
+├── config.py               # all settings + .env loading + startup validation
+├── main.py                 # optional single-command dev entry
+├── start.sh                # loads .env then runs the bot
+├── .env.example            # copy this to .env and fill in your secrets
+│
+├── core/                   # shared application layer
+│   ├── logger.py           # centralized logging
+│   ├── database.py         # MongoDB wrapper (graceful dummy mode)
+│   ├── health.py           # health-check HTTP server
+│   └── errors.py           # custom exceptions (TMDBAuthError, …)
+│
+├── services/               # external integrations
+│   ├── tmdb_client.py      # TMDB API client (search + fetch by id)
+│   ├── tmdb_service.py     # TMDB Flask micro-service
+│   └── upload.py           # ImgBB image upload
+│
+├── plugins/                # Telegram command/callback handlers
+│   ├── start.py            # /start, /help
+│   ├── commands.py         # /ani /net /mod /tmdb … poster commands
+│   ├── thumbnails.py       # /magic /premiere (callback picker flow)
+│   ├── user_settings.py    # /settings (callback-driven, per-user)
+│   ├── premium.py          # premium plan commands
+│   ├── admin.py            # /authorize /unauthorize /authorized
+│   └── broadcast.py        # /broadcast
+│
+├── templates/              # poster generator engine (Pillow)
+├── thumbnail_generator.py  # Magic + Premiere thumbnail engine
+├── anilist.py / crunchyroll.py / fonts.py / poster.py
+└── fonts/  iconspng/  sc/  tests/
+```
+
+> `utils/` and `api/` now contain thin **backward-compatible re-exports** so any
+> old import (`from utils.db import db`, `from api.tmdb_client import …`) still works.
+
+---
+
+## 🚀 Deployment
+
+### Prerequisites
+
+- Python 3.9+ (project targets 3.11)
+- Telegram bot token from [@BotFather](https://t.me/BotFather)
+- `API_ID` + `API_HASH` from [my.telegram.org](https://my.telegram.org)
+- A MongoDB database (required for premium / authorize / per-user settings)
+- *(Optional)* a TMDB API key / bearer token for `/tmdb`, `/magic`, `/premiere`
+
+### Install
+
+```bash
+git clone https://github.com/TELLYHUBCLOUD/Postermaking-Bot.git
+cd Postermaking-Bot
+
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+cp .env.example .env
+# edit .env and fill in API_ID, API_HASH, BOT_TOKEN, MONGO_URL, OWNER_ID, TMDB_*
+```
+
+### Run
+
+```bash
+./start.sh          # loads .env and starts the bot
+# or
+python bot.py
+```
+
+The bot fails fast at startup with a clear message if a required credential is missing.
+
+### Deploy on Render
+
+1. Point Render at this repo, **Build Command**: `pip install -r requirements.txt`,
+   **Start Command**: `bash start.sh`.
+2. Add the environment variables from `.env.example`.
+3. Render reads `$PORT` (auto-set) — the health server binds to it, so the service
+   shows as **live** and the bot runs in the same process.
+
+---
+
+## 🎮 Commands
+
+| Command | Description |
+|---------|-------------|
+| `/start` `/help` | Welcome + help |
+| `/ani` `/anim` | AniList Anime / Manga poster |
+| `/net` `/netm` | Netflix Anime / Manga poster |
+| `/crun` | Crunchyroll poster |
+| `/light` `/dark` `/mod` | Simple / Modern posters |
+| `/tmdb` `/movie` `/tv` | TMDB Movie / TV poster |
+| `/magic <name>` | Magic thumbnail (pick title → pick 1 of 20 templates) |
+| `/premiere <name>` | Premiere thumbnail (pick title → pick 1 of 12 styles) |
+| `/settings` | Per-user settings via buttons |
+| `/my_plan` `/plans` | Premium status / plans |
+| Owner: `/broadcast`, `/add_premium`, `/remove_premium`, `/authorize`, `/unauthorize`, `/authorized` |
+
+---
+
+## 🧠 How the thumbnail flow works
+
+```
+/magic Inception
+   → TMDB search → "Found N matches, select the correct one"
+   → 🎬 Inception (2010)  🎬 Inception (2003) …
+   → pick a template (Classic, Netflix, Disney, …)
+   → downloads backdrop+poster → renders → sends the image
+```
+
+If a user set a **default template/style** in `/settings`, the picker is skipped
+and their preferred style is used automatically.
+
+---
+
+## 🔧 Configuration (`.env`)
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `API_ID`, `API_HASH`, `BOT_TOKEN` | ✅ | Telegram bot |
+| `MONGO_URL` | ✅ | Database for premium/authorize/settings |
+| `OWNER_ID` | ✅ | Owner Telegram ID (admin commands) |
+| `TMDB_BEARER_TOKEN` / `TMDB_API_KEY` | for TMDB features | Movie/TV data |
+| `THUMBNAIL_BRAND`, `THUMBNAIL_CHANNEL`, `THUMBNAIL_QUALITY_TAGS` | optional | Thumbnail defaults |
+| `LIMIT_DEFAULT/BRONZE/SILVER/GOLD` | optional | Per-tier daily limits |
+| `PORT` | Render auto-set | Health server port |
+
+---
+
+## 💬 Credits
+
+- **Powered by:** @Blaze_Updatez
+- **Created by:** @Bharath_boy

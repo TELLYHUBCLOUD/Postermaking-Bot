@@ -17,7 +17,7 @@ skipped and their preferred style is used automatically.
 Per-user values (brand, channel badge, quality tags) come from MongoDB and
 override the bot defaults.
 """
-import logging
+from core.logger import get_logger
 import os
 import tempfile
 
@@ -27,8 +27,9 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import Config
-from utils.db import db
-from api.tmdb_client import search_media_candidates, get_tmdb_media_by_id, TMDBAuthError
+from core.database import db
+from services.tmdb_client import search_media_candidates, get_tmdb_media_by_id
+from core.errors import TMDBAuthError
 from thumbnail_generator import make_magic_thumbnail, make_premiere_thumbnail
 from plugins.thumbnail_choices import MAGIC_CHOICES, PREMIERE_CHOICES
 
@@ -41,7 +42,7 @@ from plugins.user_settings import (
     user_setting_default_style,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 DEFAULT_BRAND = Config.THUMBNAIL_BRAND
 

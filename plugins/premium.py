@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from pyrogram import Client, filters
 from config import Config
-from utils.db import db
+from core.database import db
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 PLANS_TXT = """

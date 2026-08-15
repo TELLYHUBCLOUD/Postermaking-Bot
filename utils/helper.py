@@ -1,6 +1,6 @@
 import os
 import io
-import logging
+from core.logger import get_logger
 from templates.anilist_poster import create_poster as anilist_poster
 from templates.crunchyroll_poster import generate_poster as crunchyroll_poster
 from templates.lightsimple import create_poster as lightsimple_poster
@@ -10,13 +10,14 @@ from templates.modern import create_poster as modern_poster
 from templates.tmdb_poster import create_poster as tmdb_poster
 
 from anilist import get_anime_data
-from api.tmdb_client import get_tmdb_media
+from services.tmdb_client import get_tmdb_media
 from crunchyroll import fetch_series_data
 from PIL import ImageDraw, ImageFont, Image
 
 from config import Config
 
 WATERMARK = Config.WATERMARK
+logger = get_logger(__name__)
 
 
 def add_watermark(image, text=None):
@@ -61,7 +62,7 @@ def add_watermark(image, text=None):
         
         return image
     except Exception as e:
-        logging.error(f"Watermark Failed: {e}")
+        logger.error(f"Watermark Failed: {e}")
         return image
 
 
@@ -115,10 +116,10 @@ async def generate_poster_image(template_name, query, media_type="ANIME", is_pre
             data = fetch_series_data(query)
             # Check for errors in CR response
             if isinstance(data, dict) and "error" in data:
-                logging.error(f"CR Error: {data['error']}")
+                logger.error(f"CR Error: {data['error']}")
                 data = None
         except Exception as e:
-            logging.error(f"CR Fetch Exception: {e}", exc_info=True)
+            logger.error(f"CR Fetch Exception: {e}", exc_info=True)
             data = None
     else:
         # Standard AniList Fetching
@@ -197,5 +198,5 @@ async def generate_poster_image(template_name, query, media_type="ANIME", is_pre
         return None 
         
     except Exception as e:
-        logging.error(f"Generation Error: {e}", exc_info=True)
+        logger.error(f"Generation Error: {e}", exc_info=True)
         return None

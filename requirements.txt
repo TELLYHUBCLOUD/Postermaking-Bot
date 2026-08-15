@@ -10,3 +10,4 @@ pytz
 motor
 curl_cffi
 flask
+python-dotenv

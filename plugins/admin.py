@@ -12,7 +12,7 @@ You can also reply to a user's message with `/authorize` to authorize that user.
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from utils.db import db
+from core.database import db
 from config import Config
 
 

@@ -21,7 +21,7 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import Config
-from utils.db import db
+from core.database import db
 from plugins.thumbnail_choices import MAGIC_CHOICES, PREMIERE_CHOICES
 
 # ── Setting keys ─────────────────────────────────────────────────────────────
