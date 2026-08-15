@@ -86,9 +86,10 @@ async def _send_main_menu(message):
     await message.reply_text(text, reply_markup=markup, quote=True)
 
 
-async def _edit_main_menu(message):
+async def _edit_main_menu(message, user_id=None):
     """Edit an EXISTING message to show the main settings menu (from a callback)."""
-    user_id = message.from_user.id
+    if user_id is None:
+        user_id = message.from_user.id if message.from_user else 0
     text, markup = await _main_menu_content(user_id)
     try:
         await message.edit_text(text, reply_markup=markup)
@@ -123,9 +124,10 @@ async def _main_menu_content(user_id: int):
 
 
 # ── Open a setting's edit menu ───────────────────────────────────────────────
-async def _open_edit(client, message, key):
+async def _open_edit(client, message, key, user_id=None):
     """Render the edit menu for ``key`` (used by the callback and refreshes)."""
-    user_id = message.from_user.id
+    if user_id is None:
+        user_id = message.from_user.id if message.from_user else 0
     current = await _current_value(user_id, key)
     label = _label_of(key)
     is_choice = _is_choice(key)
@@ -178,7 +180,8 @@ async def _open_edit(client, message, key):
 async def settings_edit(client, callback_query):
     import re as _re
     key = _re.match(r"^settings_edit_(.+)$", callback_query.data).group(1)
-    await _open_edit(client, callback_query.message, key)
+    user_id = callback_query.from_user.id
+    await _open_edit(client, callback_query.message, key, user_id=user_id)
     await callback_query.answer()
 
 
@@ -192,7 +195,7 @@ async def settings_set_choice(client, callback_query):
     await db.set_user_setting(user_id, key, value)
     await callback_query.answer(f"Saved: {value}", show_alert=False)
     # Refresh the edit menu
-    await _open_edit(client, callback_query.message, key)
+    await _open_edit(client, callback_query.message, key, user_id=user_id)
 
 
 # ── Preset applied (text settings) ───────────────────────────────────────────
@@ -201,10 +204,11 @@ async def settings_preset(client, callback_query):
     import re as _re
     m = _re.match(r"^settings_preset_(quality_tags)_(\d+)$", callback_query.data)
     key, idx = m.group(1), int(m.group(2))
+    user_id = callback_query.from_user.id
     value = QUALITY_PRESETS[idx]
-    await db.set_user_setting(callback_query.from_user.id, key, value)
+    await db.set_user_setting(user_id, key, value)
     await callback_query.answer(f"Saved: {value}", show_alert=False)
-    await _open_edit(client, callback_query.message, key)
+    await _open_edit(client, callback_query.message, key, user_id=user_id)
 
 
 # ── Request a custom value → next text message becomes the value ─────────────
@@ -230,6 +234,8 @@ async def settings_custom(client, callback_query):
 # ── Catch the custom text message ────────────────────────────────────────────
 @Client.on_message(filters.text & filters.private & ~filters.command([]))
 async def capture_custom_text(client, message):
+    if not message.from_user:
+        return
     user_id = message.from_user.id
     key = _pending_input.pop(user_id, None)
     if not key:
@@ -261,13 +267,14 @@ async def settings_default(client, callback_query):
     await db.reset_user_setting(user_id, key)
     default = _default_of(key)
     await callback_query.answer(f"Reset to default: {default}", show_alert=True)
-    await _open_edit(client, callback_query.message, key)
+    await _open_edit(client, callback_query.message, key, user_id=user_id)
 
 
 # ── Back to main menu ────────────────────────────────────────────────────────
 @Client.on_callback_query(filters.regex(r"^settings_menu$"))
 async def settings_menu_back(client, callback_query):
-    await _edit_main_menu(callback_query.message)
+    user_id = callback_query.from_user.id
+    await _edit_main_menu(callback_query.message, user_id=user_id)
     await callback_query.answer()
 
 

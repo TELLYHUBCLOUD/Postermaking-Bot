@@ -151,4 +151,4 @@ async def main():
         logger.info("Bot Stopped.")
 
 if __name__ == "__main__":
-    app.run(main())
+    asyncio.run(main())

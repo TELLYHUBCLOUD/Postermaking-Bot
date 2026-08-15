@@ -23,43 +23,63 @@ PLANS_TXT = """
 - Limit: {default_limit} Posters/Day
 """
 
-def get_user_id(message):
-    if message.reply_to_message:
-        return message.reply_to_message.from_user.id
+def parse_add_premium_args(message):
+    """Parses user_id, rank, and expiry duration string from message arguments or reply."""
+    user_id = None
+    rank = "bronze"
+    expiry_str = None
+
+    cmd_args = message.command[1:]  # Arguments after /add_premium
+
+    if cmd_args and (cmd_args[0].isdigit() or (cmd_args[0].startswith("-") and cmd_args[0][1:].isdigit())):
+        user_id = int(cmd_args[0])
+        if len(cmd_args) > 1:
+            rank = cmd_args[1].lower()
+        if len(cmd_args) > 2:
+            expiry_str = cmd_args[2]
+    elif message.reply_to_message:
+        if message.reply_to_message.from_user:
+            user_id = message.reply_to_message.from_user.id
+        elif message.reply_to_message.sender_chat:
+            user_id = message.reply_to_message.sender_chat.id
+        if len(cmd_args) > 0:
+            rank = cmd_args[0].lower()
+        if len(cmd_args) > 1:
+            expiry_str = cmd_args[1]
+
+    return user_id, rank, expiry_str
+
+
+def parse_expiry_time(duration_str):
+    if not duration_str:
+        return None
     try:
-        return int(message.command[1])
-    except (IndexError, ValueError):
+        duration_str = duration_str.lower()
+        if duration_str.endswith("min"):
+            return datetime.now() + timedelta(minutes=int(duration_str[:-3]))
+        elif duration_str.endswith("h"):
+            return datetime.now() + timedelta(hours=int(duration_str[:-1]))
+        elif duration_str.endswith("d"):
+            return datetime.now() + timedelta(days=int(duration_str[:-1]))
+        elif duration_str.endswith("w"):
+            return datetime.now() + timedelta(weeks=int(duration_str[:-1]))
+        elif duration_str.endswith("m"):
+            return datetime.now() + timedelta(days=30 * int(duration_str[:-1]))
+        return None
+    except (ValueError, TypeError):
         return None
 
-def get_rank(message):
-    try:
-        return message.command[2]
-    except IndexError:
-        return "bronze" # Default rank
 
-def get_expiry_time(message):
-    try:
-        duration_str = message.command[3].lower()
-
-        if duration_str.endswith("min"):
-            duration_value = int(duration_str[:-3])
-            return datetime.now() + timedelta(minutes=duration_value)
-        elif duration_str.endswith("h"):
-            duration_value = int(duration_str[:-1])
-            return datetime.now() + timedelta(hours=duration_value)
-        elif duration_str.endswith("d"):
-            duration_value = int(duration_str[:-1])
-            return datetime.now() + timedelta(days=duration_value)
-        elif duration_str.endswith("w"):
-            duration_value = int(duration_str[:-1])
-            return datetime.now() + timedelta(weeks=duration_value)
-        elif duration_str.endswith("m"):
-            duration_value = int(duration_str[:-1])
-            return datetime.now() + timedelta(days=30 * duration_value)  # months approximation
-        else:
-            return None  # Invalid time unit
-    except (IndexError, ValueError):
-        return None  # No expiry or invalid input
+def get_user_id(message):
+    cmd_args = message.command[1:]
+    if cmd_args and (cmd_args[0].isdigit() or (cmd_args[0].startswith("-") and cmd_args[0][1:].isdigit())):
+        return int(cmd_args[0])
+    if message.reply_to_message:
+        if message.reply_to_message.from_user:
+            return message.reply_to_message.from_user.id
+        elif message.reply_to_message.sender_chat:
+            return message.reply_to_message.sender_chat.id
+    return None
 
 
 def format_timedelta(td):
@@ -82,15 +102,14 @@ def format_timedelta(td):
 
 @Client.on_message(filters.command("add_premium") & filters.user(Config.BOT_OWNER))
 async def add_premium(client, message):
-    user_id = get_user_id(message)
+    user_id, rank, expiry_str = parse_add_premium_args(message)
     if not user_id:
-        return await message.reply_text("Please reply to a user or provide a user ID.\nUsage: `/add_premium <user_id> <rank> <time>`\nRank: gold/silver/bronze\nTime: 1d/1w/1m")
+        return await message.reply_text("Please reply to a user or provide a user ID.\nUsage: `/add_premium <user_id> <rank> <time>`\nOr reply: `/add_premium <rank> <time>`\nRank: gold/silver/bronze\nTime: 1d/1w/1m")
 
-    rank = get_rank(message)
     if rank not in ["gold", "silver", "bronze"]:
         return await message.reply_text("Invalid rank. Please use 'gold', 'silver', or 'bronze'.")
 
-    expiry_time = get_expiry_time(message)
+    expiry_time = parse_expiry_time(expiry_str)
     await db.add_premium_user(user_id, rank, expiry_time)
     
     expiry_text = f"until {expiry_time.strftime('%Y-%m-%d %H:%M:%S')}" if expiry_time else "permanently"

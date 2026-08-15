@@ -18,8 +18,11 @@ from config import Config
 
 def _resolve_target(message):
     """Resolve the target id from a reply, an argument, or the current chat."""
-    if message.reply_to_message and message.reply_to_message.from_user:
-        return message.reply_to_message.from_user.id
+    if message.reply_to_message:
+        if message.reply_to_message.from_user:
+            return message.reply_to_message.from_user.id
+        elif message.reply_to_message.sender_chat:
+            return message.reply_to_message.sender_chat.id
     if len(message.command) >= 2:
         try:
             return int(message.command[1])
@@ -38,9 +41,12 @@ async def authorize_cmd(client, message):
             "Or reply to a user's message with `/authorize`."
         )
 
-    is_new = await db.authorize_user(target, message.from_user.id)
+    authorized_by = message.from_user.id if message.from_user else Config.BOT_OWNER
+    is_new = await db.authorize_user(target, authorized_by)
 
-    if message.chat.type in ("group", "supergroup"):
+    is_group = target < 0 or (target == message.chat.id and message.chat.type in ("group", "supergroup"))
+
+    if is_group:
         text = (
             f"✅ **Group Authorized**\n"
             f"Chat ID: `{target}`\n"

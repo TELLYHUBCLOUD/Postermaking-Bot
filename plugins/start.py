@@ -6,10 +6,12 @@ from config import Config
 @Client.on_message(filters.command("start"))
 async def start_handler(client, message):
     # Add user to DB
-    await db.add_user(message.from_user.id)
+    user_id = message.from_user.id if message.from_user else message.chat.id
+    first_name = message.from_user.first_name if message.from_user and message.from_user.first_name else "there"
+    await db.add_user(user_id)
     
     txt = (
-        f"Hi **{message.from_user.first_name}**! 👋\n\n"
+        f"Hi **{first_name}**! 👋\n\n"
         "I am an advanced **Anime/Manga Poster Bot**.\n"
         "I can generate beautiful posters in various styles!\n\n"
         "Click the button below to see the available commands."

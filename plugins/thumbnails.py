@@ -60,7 +60,7 @@ async def _get_user_channel(user_id: int) -> str:
 async def _group_authorized(message) -> bool:
     if message.chat.type not in ("group", "supergroup"):
         return True
-    user_ok = await db.is_authorized(message.from_user.id)
+    user_ok = await db.is_authorized(message.from_user.id) if message.from_user else False
     chat_ok = await db.is_authorized(message.chat.id)
     return user_ok or chat_ok
 
@@ -212,14 +212,14 @@ async def title_selected(client, callback_query):
         default = await user_setting_default_template(user_id)
         if default:
             await callback_query.message.edit_text("⚡ **Using your default template…**")
-            await _render_and_send(client, callback_query.message, mode, media_tag, media_id, default)
+            await _render_and_send(client, callback_query.message, mode, media_tag, media_id, default, user_id=user_id)
             await callback_query.answer()
             return
     else:
         default = await user_setting_default_style(user_id)
         if default:
             await callback_query.message.edit_text("⚡ **Using your default style…**")
-            await _render_and_send(client, callback_query.message, mode, media_tag, media_id, default)
+            await _render_and_send(client, callback_query.message, mode, media_tag, media_id, default, user_id=user_id)
             await callback_query.answer()
             return
 
@@ -247,9 +247,10 @@ async def thumb_cancel(client, callback_query):
 
 
 # ── Step 3: template chosen → generate & send ──────────────────────────────
-async def _render_and_send(client, message, mode, media_tag, media_id, style):
+async def _render_and_send(client, message, mode, media_tag, media_id, style, user_id=None):
     """Shared generation routine (used by picker & auto-default flows)."""
-    user_id = message.from_user.id
+    if user_id is None:
+        user_id = message.from_user.id if message.from_user else 0
 
     # premium & daily limit
     is_premium = await db.is_premium_user(user_id)
@@ -365,5 +366,6 @@ async def template_chosen(client, callback_query):
     import re as _re
     m = _re.match(r"^(magic|premiere)_(tpl|stl)_(movie|tv)_(\d+)_(.+)$", callback_query.data)
     mode, media_tag, media_id, style = m.group(1), m.group(3), m.group(4), m.group(5)
-    await _render_and_send(client, callback_query.message, mode, media_tag, media_id, style)
+    user_id = callback_query.from_user.id
+    await _render_and_send(client, callback_query.message, mode, media_tag, media_id, style, user_id=user_id)
     await callback_query.answer()

@@ -53,7 +53,7 @@ async def _is_authorized_in_group(message) -> bool:
         return True
     if message.chat.type in ("channel",):
         return False
-    user_ok = await db.is_authorized(message.from_user.id)
+    user_ok = await db.is_authorized(message.from_user.id) if message.from_user else False
     chat_ok = await db.is_authorized(message.chat.id)
     return user_ok or chat_ok
 
@@ -83,7 +83,7 @@ async def generic_gen(client, message, template, media_type):
         return
 
     # ── Premium status & daily limit ─────────────────────────────────────
-    user_id = message.from_user.id
+    user_id = message.from_user.id if message.from_user else message.chat.id
     is_premium = await db.is_premium_user(user_id)
 
     if is_premium:
