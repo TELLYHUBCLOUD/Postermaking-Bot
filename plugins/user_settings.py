@@ -75,13 +75,29 @@ async def _current_value(user_id: int, key: str):
 @Client.on_message(filters.command("settings"))
 async def settings_cmd(client, message):
     await db.add_user(message.from_user.id)
-    await _show_main_menu(message, message)
+    # Incoming command → reply with the menu (never try to edit the user's msg).
+    await _send_main_menu(message)
 
 
-async def _show_main_menu(msg_or_cq, target):
-    """Main settings menu listing every setting with its current value."""
-    user_id = (msg_or_cq.from_user.id if hasattr(msg_or_cq, "from_user")
-               else msg_or_cq.message.from_user.id)
+async def _send_main_menu(message):
+    """Send the main settings menu as a NEW message (from a /settings command)."""
+    user_id = message.from_user.id
+    text, markup = _main_menu_content(user_id)
+    await message.reply_text(text, reply_markup=markup, quote=True)
+
+
+async def _edit_main_menu(message):
+    """Edit an EXISTING message to show the main settings menu (from a callback)."""
+    user_id = message.from_user.id
+    text, markup = _main_menu_content(user_id)
+    try:
+        await message.edit_text(text, reply_markup=markup)
+    except Exception:
+        # Fallback if the message can't be edited (e.g. already deleted)
+        await message.reply_text(text, reply_markup=markup, quote=True)
+
+
+async def _main_menu_content(user_id: int):
     rows = [
         (KEY_BRAND, await _current_value(user_id, KEY_BRAND)),
         (KEY_CHANNEL, await _current_value(user_id, KEY_CHANNEL)),
@@ -103,12 +119,7 @@ async def _show_main_menu(msg_or_cq, target):
         InlineKeyboardButton("💎 Premium", callback_data="plans_menu"),
         InlineKeyboardButton("❌ Close", callback_data="close_menu"),
     ])
-    markup = InlineKeyboardMarkup(buttons)
-
-    if hasattr(msg_or_cq, "edit_text"):
-        await msg_or_cq.edit_text("\n".join(text), reply_markup=markup)
-    else:
-        await msg_or_cq.reply_text("\n".join(text), reply_markup=markup, quote=True)
+    return "\n".join(text), InlineKeyboardMarkup(buttons)
 
 
 # ── Open a setting's edit menu ───────────────────────────────────────────────
@@ -256,7 +267,7 @@ async def settings_default(client, callback_query):
 # ── Back to main menu ────────────────────────────────────────────────────────
 @Client.on_callback_query(filters.regex(r"^settings_menu$"))
 async def settings_menu_back(client, callback_query):
-    await _show_main_menu(callback_query.message, callback_query)
+    await _edit_main_menu(callback_query.message)
     await callback_query.answer()
 
 

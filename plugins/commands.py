@@ -7,6 +7,7 @@ from utils.helper import generate_poster_image
 from utils.upload import upload_to_imgbb
 from utils.db import db
 from config import Config
+from api.tmdb_client import TMDBAuthError
 
 # Command mappings:  command -> (template name, media type)
 # TMDB is a movie / TV poster and ignores the anime/manga media type.
@@ -137,6 +138,12 @@ async def generic_gen(client, message, template, media_type):
         )
         await status.delete()
 
+    except TMDBAuthError:
+        await status.edit_text(
+            "🔑 **TMDB API error.**\n"
+            "The bot's TMDB token is invalid/expired. Please ask the admin "
+            "to set a valid `TMDB_BEARER_TOKEN`."
+        )
     except Exception as e:
         logging.error(f"Error in command /{message.command[0]}: {e}", exc_info=True)
         await status.edit_text("⚠️ **Error.**\nAn unexpected error occurred. Please try again later.")

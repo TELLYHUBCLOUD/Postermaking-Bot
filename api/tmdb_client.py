@@ -36,6 +36,11 @@ MIN_RUNTIME = Config.MIN_RUNTIME
 
 sys.setrecursionlimit(10000)
 
+
+class TMDBAuthError(Exception):
+    """Raised when TMDB rejects our credentials (401/403)."""
+
+
 # ── HTTP Session with Retries ────────────────────────────────────────────────
 session = requests.Session()
 retries = Retry(
@@ -60,6 +65,9 @@ def tmdb_get(path: str, params: dict = None, api_key: str = None):
 
     Returns:
         Response object from :mod:`requests`.
+
+    Raises:
+        TMDBAuthError: when TMDB returns 401/403 (invalid/expired credentials).
     """
     url = f"{TMDB_BASE_URL}/{path.lstrip('/')}"
     _params = params.copy() if params else {}
@@ -76,6 +84,11 @@ def tmdb_get(path: str, params: dict = None, api_key: str = None):
         _params["api_key"] = TMDB_API_KEY
 
     resp = session.get(url, params=_params, headers=_headers)
+    if resp.status_code in (401, 403):
+        raise TMDBAuthError(
+            "TMDB API token is invalid or expired. Please set a valid "
+            "TMDB_BEARER_TOKEN / TMDB_API_KEY in config.py and redeploy."
+        )
     resp.raise_for_status()
     return resp
 

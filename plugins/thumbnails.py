@@ -28,7 +28,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import Config
 from utils.db import db
-from api.tmdb_client import search_media_candidates, get_tmdb_media_by_id
+from api.tmdb_client import search_media_candidates, get_tmdb_media_by_id, TMDBAuthError
 from thumbnail_generator import make_magic_thumbnail, make_premiere_thumbnail
 from plugins.thumbnail_choices import MAGIC_CHOICES, PREMIERE_CHOICES
 
@@ -142,6 +142,13 @@ async def _start_thumbnail(client, message, mode):
 
     try:
         candidates = search_media_candidates(query, limit=6)
+    except TMDBAuthError:
+        await status.edit_text(
+            "🔑 **TMDB API error.**\n"
+            "The bot's TMDB token is invalid/expired. Please ask the admin "
+            "to set a valid `TMDB_BEARER_TOKEN`."
+        )
+        return
     except Exception as e:
         logger.error(f"Search error: {e}", exc_info=True)
         await status.edit_text("❌ **Error while searching.** Please try again later.")
@@ -334,6 +341,15 @@ async def _render_and_send(client, message, mode, media_tag, media_id, style):
             reply_markup=buttons,
         )
         await message.delete()
+    except TMDBAuthError:
+        try:
+            await message.edit_text(
+                "🔑 **TMDB API error.**\n"
+                "The bot's TMDB token is invalid/expired. Please ask the admin "
+                "to set a valid `TMDB_BEARER_TOKEN`."
+            )
+        except Exception:
+            pass
     except Exception as e:
         logger.error(f"Thumbnail generation error: {e}", exc_info=True)
         try:

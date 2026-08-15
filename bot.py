@@ -6,7 +6,10 @@ and starts the background scheduler for premium account management.
 """
 
 import logging
+import os
 import asyncio
+import threading
+
 from pyrogram import Client, idle
 from pyrogram.types import BotCommand
 from config import Config
@@ -28,6 +31,44 @@ app = Client(
     bot_token=Config.BOT_TOKEN,
     plugins=dict(root="plugins")
 )
+
+
+def _start_health_server():
+    """
+    Start a tiny HTTP server bound to the port Render/PaaS expects.
+
+    A Telegram bot is a long-running process that never opens an HTTP port by
+    itself, so Render reports "No open ports detected" and marks a *web*
+    service unhealthy. Binding a health-check port makes Render detect a live
+    service while the bot runs normally in the same process.
+
+    Port resolution order:
+      1. $PORT (set by Render / Heroku)
+      2. Config.TMDB_SERVICE_PORT (default 5000)
+    """
+    port = int(os.environ.get("PORT", Config.TMDB_SERVICE_PORT or 5000))
+
+    def _run():
+        try:
+            from flask import Flask, jsonify
+            health = Flask("health")
+
+            @health.get("/")
+            def _index():
+                return "Poster Bot is running 🎨"
+
+            @health.get("/health")
+            def _health():
+                return jsonify({"status": "ok", "bot": Config.BOT_NAME})
+
+            logger.info(f"Health server listening on 0.0.0.0:{port}")
+            health.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
+        except Exception as e:
+            logger.warning(f"Health server could not start on port {port}: {e}")
+
+    t = threading.Thread(target=_run, daemon=True, name="health-server")
+    t.start()
+    return t
 
 async def check_expired_premiums(client):
     """
@@ -59,6 +100,9 @@ async def main():
     Starts the bot, registers commands, and initializes background tasks.
     """
     try:
+        # Bind a port so Render/PaaS detect a live service (worker + health port).
+        _start_health_server()
+
         await app.start()
         logger.info("Bot Started!")
         
